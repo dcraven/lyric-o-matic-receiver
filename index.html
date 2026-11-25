@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lyric-o-matic</title>
+  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0b10; color: #f2f2f2; font-family: system-ui, sans-serif; }
+    body { display: grid; place-items: center; }
+    h1 { font-size: 8vh; letter-spacing: 0.3em; margin: 0; }
+    p { font-size: 3vh; opacity: 0.7; text-align: center; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>LYRIC-O-MATIC</h1>
+    <p>Receiver placeholder</p>
+  </main>
+  <script>
+    // Start the Cast receiver when running on a Cast device; a no-op in a normal browser.
+    try {
+      if (window.cast && cast.framework && /CrKey|Android|AFT|TV/.test(navigator.userAgent)) {
+        cast.framework.CastReceiverContext.getInstance().start();
+      }
+    } catch (e) {
+      console.warn('Cast receiver not started:', e);
+    }
+  </script>
+</body>
+</html>
