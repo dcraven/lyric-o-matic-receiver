@@ -3,6 +3,15 @@
 import { NAMESPACE, MessageRouter } from './messages.js';
 
 const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
+const t0 = Date.now();
+
+function logEvent(...parts) {
+  const line = document.createElement('div');
+  line.textContent = `${((Date.now() - t0) / 1000).toFixed(0)}s ${parts.filter(Boolean).join(' ')}`;
+  logEl.append(line);
+  while (logEl.childElementCount > 12) logEl.firstElementChild.remove();
+}
 
 const router = new MessageRouter({
   heartbeat: () => {},
@@ -22,7 +31,13 @@ function showStatus() {
 const onCastDevice = window.cast?.framework && /CrKey|Android|AFT|TV/.test(navigator.userAgent);
 if (onCastDevice) {
   const context = cast.framework.CastReceiverContext.getInstance();
+  // Temporary on-screen event log for debugging the shell on the TV (no devtools there).
+  const T = cast.framework.system.EventType;
+  for (const type of [T.READY, T.SENDER_CONNECTED, T.SENDER_DISCONNECTED, T.SHUTDOWN, T.ERROR, T.STANDBY_CHANGED, T.VISIBILITY_CHANGED]) {
+    context.addEventListener(type, (e) => logEvent(type, e.senderId ?? '', e.reason ?? '', e.userAgent ?? ''));
+  }
   context.addCustomMessageListener(NAMESPACE, (event) => {
+    logEvent('message', event.senderId, JSON.stringify(event.data).slice(0, 60));
     const result = router.receive(event.data);
     if (!result.ok) console.warn('Ignored message from', event.senderId, result.error);
     showStatus();
