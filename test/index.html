@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receiver Tests</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #0b0b10; color: #eee; font: 15px/1.5 ui-monospace, monospace; }
+    .ok { color: #7ddc8a; } .fail { color: #ff7a7a; } h1 { font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1 id="summary">Running…</h1>
+  <ul id="results"></ul>
+  <script type="module">
+    import { tests as timingTests } from './timing.test.js';
+    import { tests as messageTests } from './messages.test.js';
+    const tests = [...timingTests, ...messageTests];
+    const list = document.getElementById('results');
+    let failed = 0;
+    for (const { name, fn } of tests) {
+      const li = document.createElement('li');
+      try { await fn(); li.className = 'ok'; li.textContent = `ok ${name}`; }
+      catch (e) { failed++; li.className = 'fail'; li.textContent = `FAIL ${name}: ${e.message}`; }
+      list.append(li);
+    }
+    document.getElementById('summary').textContent = `${tests.length - failed}/${tests.length} passed`;
+  </script>
+</body>
+</html>

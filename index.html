@@ -10,6 +10,8 @@
     body { display: grid; place-items: center; }
     h1 { font-size: 8vh; letter-spacing: 0.3em; margin: 0; }
     p { font-size: 3vh; opacity: 0.7; text-align: center; }
+    /* Temporary connection readout for testing the shell; replaced by the idle screen in section 6. */
+    #status { position: fixed; left: 5vw; bottom: 4vh; font-size: 2vh; opacity: 0.45; }
   </style>
 </head>
 <body>
@@ -17,15 +19,7 @@
     <h1>LYRIC-O-MATIC</h1>
     <p>Receiver placeholder</p>
   </main>
-  <script>
-    // Start the Cast receiver when running on a Cast device; a no-op in a normal browser.
-    try {
-      if (window.cast && cast.framework && /CrKey|Android|AFT|TV/.test(navigator.userAgent)) {
-        cast.framework.CastReceiverContext.getInstance().start();
-      }
-    } catch (e) {
-      console.warn('Cast receiver not started:', e);
-    }
-  </script>
+  <div id="status"></div>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
