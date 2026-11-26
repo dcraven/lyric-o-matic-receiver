@@ -1,6 +1,7 @@
-// Receiver shell: starts CAF, keeps the app open without media, and listens on our namespace.
+// Receiver shell: starts CAF, keeps the TV awake (keepawake.js), and listens on our namespace.
 // Screens (idle, lyrics, fallbacks) come in section 6; the heartbeat backstop comes in task 3.4.
 import { NAMESPACE, MessageRouter } from './messages.js';
+import { setUpKeepAwake } from './keepawake.js';
 
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
@@ -17,47 +18,6 @@ function logEvent(...parts) {
   try { context?.sendCustomMessage(NAMESPACE, undefined, { type: 'log', text }); } catch {}
 }
 
-// EXPERIMENT (screensaver): ways to keep Google TV's Ambient Mode away, chosen by a
-// { type: 'keepAwake', method: 'caf' | 'video' | 'wakelock' } message from tools/cast-debug/heartbeat.js.
-// Nothing runs unless that message arrives. Remove or turn into a design decision after the experiment.
-const MEDIA_URL = new URL('media/keepawake.mp4', location.href).href;
-let wakeLock = null;
-
-async function keepAwake(method) {
-  logEvent('keepAwake', method, `wakeLock API ${'wakeLock' in navigator ? 'present' : 'missing'}`);
-  try {
-    if (method === 'caf') {
-      // Play the silent loop through CAF, so the Cast runtime itself reports PLAYING media.
-      const pm = context.getPlayerManager();
-      const req = new cast.framework.messages.LoadRequestData();
-      req.media = new cast.framework.messages.MediaInformation();
-      req.media.contentId = MEDIA_URL;
-      req.media.contentUrl = MEDIA_URL;
-      req.media.contentType = 'video/mp4';
-      req.media.streamType = cast.framework.messages.StreamType.BUFFERED;
-      req.queueData = new cast.framework.messages.QueueData();
-      req.queueData.repeatMode = cast.framework.messages.RepeatMode.REPEAT_SINGLE;
-      req.autoplay = true;
-      await pm.load(req);
-      logEvent('caf load ok', pm.getPlayerState());
-    } else if (method === 'video') {
-      // Plain <video> element, outside CAF.
-      const v = document.getElementById('keepawake-plain');
-      v.src = MEDIA_URL;
-      v.loop = true;
-      await v.play();
-      logEvent('video playing');
-    } else if (method === 'wakelock') {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => logEvent('wakelock released'));
-      logEvent('wakelock acquired');
-    } else {
-      logEvent('keepAwake: unknown method', method);
-    }
-  } catch (e) {
-    logEvent('keepAwake failed', method, e?.name, e?.message ?? String(e));
-  }
-}
 document.addEventListener('visibilitychange', () => logEvent('document', document.visibilityState));
 
 const router = new MessageRouter({
@@ -85,19 +45,13 @@ if (onCastDevice) {
   }
   context.addCustomMessageListener(NAMESPACE, (event) => {
     logEvent('message', event.senderId, JSON.stringify(event.data).slice(0, 60));
-    if (event.data?.type === 'keepAwake') return keepAwake(event.data.method);
     const result = router.receive(event.data);
     if (!result.ok) console.warn('Ignored message from', event.senderId, result.error);
     showStatus();
   });
-  const pm = context.getPlayerManager();
-  pm.setMediaElement(document.getElementById('keepawake-caf'));
-  const P = cast.framework.events.EventType;
-  for (const type of [P.PLAYING, P.PAUSE, P.ENDED, P.ERROR, P.MEDIA_FINISHED]) {
-    pm.addEventListener(type, (e) => logEvent('player', type, e.detailedErrorCode ?? ''));
-  }
+  setUpKeepAwake(context, document.getElementById('keepawake'), logEvent);
   const options = new cast.framework.CastReceiverOptions();
-  // Without this CAF closes an app that plays no media after a few minutes (design D6).
+  // A safeguard: the keep-awake loop also stops CAF from treating the app as idle (design D6, D11).
   options.disableIdleTimeout = true;
   options.customNamespaces = { [NAMESPACE]: cast.framework.system.MessageType.JSON };
   context.start(options);

@@ -12,8 +12,8 @@
     p { font-size: 3vh; opacity: 0.7; text-align: center; }
     /* Temporary connection readout for testing the shell; replaced by the idle screen in section 6. */
     #log { position: fixed; left: 5vw; top: 4vh; font: 1.8vh/1.4 ui-monospace, monospace; opacity: 0.6; }
-    /* EXPERIMENT (screensaver): full-screen, behind everything; the video is the same colour as the page. */
-    video.keepawake { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+    /* Silent keep-awake loop (design D11): full-screen, behind everything; the video is the same colour as the page. */
+    #keepawake { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
     #status { position: fixed; left: 5vw; bottom: 4vh; font-size: 2vh; opacity: 0.45; }
   </style>
 </head>
@@ -22,8 +22,7 @@
     <h1>LYRIC-O-MATIC</h1>
     <p>Receiver placeholder</p>
   </main>
-  <video id="keepawake-caf" class="keepawake" playsinline></video>
-  <video id="keepawake-plain" class="keepawake" playsinline></video>
+  <video id="keepawake" playsinline></video>
   <div id="log"></div>
   <div id="status"></div>
   <script type="module" src="js/main.js"></script>
