@@ -46,3 +46,29 @@ export class MessageRouter {
     return { ok: false, error };
   }
 }
+
+/**
+ * Describes state messages for the on-screen log, and returns null for ones that are only a refresh:
+ * same song, lyrics and play state, with the position where the receiver would expect it.
+ */
+export class StateLog {
+  constructor(now = () => Date.now()) {
+    this.now = now;
+    this.last = null;
+  }
+
+  describe(msg) {
+    const lyrics = msg.lyrics
+      ? msg.lyrics.type + (msg.lyrics.type === 'synced' ? ` ${msg.lyrics.lines.length} lines` : '')
+      : 'looking up';
+    const what = msg.mode === 'lyrics'
+      ? `"${msg.song.title}" / ${msg.song.artist} · ${lyrics} · ${msg.playing ? 'playing' : 'stopped'}`
+      : `idle${msg.noSpeakers ? ' (no speakers)' : ''}`;
+    const at = this.now();
+    const last = this.last;
+    this.last = { what, at, positionMs: msg.positionMs, playing: msg.playing };
+    const expected = last && last.positionMs + (last.playing ? at - last.at : 0);
+    if (last && last.what === what && !(Math.abs(msg.positionMs - expected) > 2000)) return null;
+    return msg.mode === 'lyrics' ? `${what} @ ${(msg.positionMs / 1000).toFixed(1)}s` : what;
+  }
+}

@@ -1,6 +1,6 @@
 // Receiver shell: starts CAF, keeps the TV awake (keepawake.js), and listens on our namespace.
 // Screens (idle, lyrics, fallbacks) come in section 6.
-import { NAMESPACE, MessageRouter } from './messages.js';
+import { NAMESPACE, MessageRouter, StateLog } from './messages.js';
 import { setUpKeepAwake } from './keepawake.js';
 import { backstopState } from './backstop.js';
 
@@ -23,10 +23,14 @@ function logEvent(...parts) {
 
 document.addEventListener('visibilitychange', () => logEvent('document', document.visibilityState));
 
+const stateLog = new StateLog();
 const router = new MessageRouter({
-  heartbeat: () => {},
-  settings: () => {},
-  state: () => {},
+  heartbeat: () => logEvent('heartbeat'),
+  settings: () => logEvent('settings'),
+  state: (msg) => {
+    const text = stateLog.describe(msg);
+    if (text) logEvent('state', text);
+  },
 });
 
 function showStatus() {
@@ -59,7 +63,6 @@ if (onCastDevice) {
     context.addEventListener(type, (e) => logEvent(type, e.senderId ?? '', e.reason ?? '', e.userAgent ?? ''));
   }
   context.addCustomMessageListener(NAMESPACE, (event) => {
-    logEvent('message', event.senderId, JSON.stringify(event.data).slice(0, 60));
     const result = router.receive(event.data);
     if (!result.ok) console.warn('Ignored message from', event.senderId, result.error);
     showStatus();

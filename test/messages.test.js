@@ -1,5 +1,5 @@
 // Tests for js/messages.js. Run in Node (`node receiver/test/run-node.mjs`) or open test/index.html in a browser.
-import { MessageRouter, NAMESPACE } from '../js/messages.js';
+import { MessageRouter, NAMESPACE, StateLog } from '../js/messages.js';
 
 export const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
@@ -62,4 +62,20 @@ test('tracks silence since the last message, counting rejected ones as contact',
   eq(r.silenceMs(), 20000);
   r.receive({ type: 'bogus' });
   eq(r.silenceMs(), 0);
+});
+
+test('state log reports changes and seeks, not refreshes', () => {
+  const now = fakeNow();
+  const log = new StateLog(now);
+  const song = (positionMs, extra = {}) => ({
+    type: 'state', mode: 'lyrics', song: { title: 'Outside', artist: 'Staind' }, positionMs, playing: true, ...extra,
+  });
+  eq(log.describe(song(1000)), '"Outside" / Staind · looking up · playing @ 1.0s');
+  const synced = { lyrics: { type: 'synced', lines: [{ t: 0, text: 'a' }] } };
+  eq(log.describe(song(1200, synced)), '"Outside" / Staind · synced 1 lines · playing @ 1.2s');
+  now.advance(4000);
+  eq(log.describe(song(5200, synced)), null, 'refresh');
+  eq(log.describe(song(90000, synced)), '"Outside" / Staind · synced 1 lines · playing @ 90.0s', 'seek');
+  eq(log.describe({ type: 'state', mode: 'idle', noSpeakers: true }), 'idle (no speakers)');
+  eq(log.describe({ type: 'state', mode: 'idle', noSpeakers: true }), null);
 });
