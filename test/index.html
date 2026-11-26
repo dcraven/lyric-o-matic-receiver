@@ -15,7 +15,8 @@
   <script type="module">
     import { tests as timingTests } from './timing.test.js';
     import { tests as messageTests } from './messages.test.js';
-    const tests = [...timingTests, ...messageTests];
+    import { tests as backstopTests } from './backstop.test.js';
+    const tests = [...timingTests, ...messageTests, ...backstopTests];
     const list = document.getElementById('results');
     let failed = 0;
     for (const { name, fn } of tests) {

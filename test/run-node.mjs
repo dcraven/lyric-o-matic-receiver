@@ -1,8 +1,9 @@
 // Runs the receiver tests in Node: node receiver/test/run-node.mjs
 import { tests as timingTests } from './timing.test.js';
 import { tests as messageTests } from './messages.test.js';
+import { tests as backstopTests } from './backstop.test.js';
 
-const tests = [...timingTests, ...messageTests];
+const tests = [...timingTests, ...messageTests, ...backstopTests];
 
 let failed = 0;
 for (const { name, fn } of tests) {

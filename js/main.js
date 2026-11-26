@@ -1,10 +1,13 @@
 // Receiver shell: starts CAF, keeps the TV awake (keepawake.js), and listens on our namespace.
-// Screens (idle, lyrics, fallbacks) come in section 6; the heartbeat backstop comes in task 3.4.
+// Screens (idle, lyrics, fallbacks) come in section 6.
 import { NAMESPACE, MessageRouter } from './messages.js';
 import { setUpKeepAwake } from './keepawake.js';
+import { backstopState } from './backstop.js';
 
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
+const lostEl = document.getElementById('lost');
+const lostCountdownEl = document.getElementById('lost-countdown');
 const t0 = Date.now();
 let context = null;
 
@@ -34,6 +37,18 @@ function showStatus() {
     : `Last message ${Math.round(silence / 1000)} s ago · heartbeats ${heartbeat} · state ${state} · settings ${settings}`;
 }
 
+// If the phone goes quiet (left the Wi-Fi, app killed), say so at 3 min and close at 4 min,
+// so the TV never sits on a stale screen. Any message from the phone clears the warning.
+let lastBackstop = 'ok';
+function checkBackstop() {
+  const b = backstopState(router.silenceMs() ?? Date.now() - t0);
+  if (b.state !== lastBackstop) logEvent('backstop', b.state);
+  lastBackstop = b.state;
+  lostEl.hidden = b.state !== 'lost';
+  if (b.state === 'lost') lostCountdownEl.textContent = `Closing in ${Math.ceil(b.closesInMs / 1000)} s`;
+  if (b.state === 'close') context.stop();
+}
+
 // Only start CAF on a Cast device; in a normal browser the page just shows the placeholder.
 const onCastDevice = window.cast?.framework && /CrKey|Android|AFT|TV/.test(navigator.userAgent);
 if (onCastDevice) {
@@ -57,6 +72,7 @@ if (onCastDevice) {
   context.start(options);
   showStatus();
   setInterval(showStatus, 1000);
+  setInterval(checkBackstop, 1000);
 } else {
   statusEl.textContent = 'Not on a Cast device';
 }

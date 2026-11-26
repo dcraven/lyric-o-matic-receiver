@@ -14,6 +14,10 @@
     #log { position: fixed; left: 5vw; top: 4vh; font: 1.8vh/1.4 ui-monospace, monospace; opacity: 0.6; }
     /* Silent keep-awake loop (design D11): full-screen, behind everything; the video is the same colour as the page. */
     #keepawake { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+    #lost { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; background: rgba(11, 11, 16, 0.85); }
+    #lost[hidden] { display: none; }
+    #lost h2 { font-size: 7vh; margin: 0 0 2vh; }
+    #lost p { font-size: 3.5vh; }
     #status { position: fixed; left: 5vw; bottom: 4vh; font-size: 2vh; opacity: 0.45; }
   </style>
 </head>
@@ -23,6 +27,10 @@
     <p>Receiver placeholder</p>
   </main>
   <video id="keepawake" playsinline></video>
+  <div id="lost" hidden>
+    <h2>Lost connection to phone</h2>
+    <p>Open Lyric-o-matic on the phone to keep going.<br><span id="lost-countdown"></span></p>
+  </div>
   <div id="log"></div>
   <div id="status"></div>
   <script type="module" src="js/main.js"></script>
